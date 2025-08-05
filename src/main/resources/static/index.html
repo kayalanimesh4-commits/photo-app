@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Photo Uploader</title>
+</head>
+<body>
+<h2>Upload Photos</h2>
+<input type="file" id="photoInput" multiple />
+<button onclick="uploadPhotos()">Upload</button>
+
+<h2>Uploaded Photos</h2>
+<div id="photoList"></div>
+
+<script>
+    async function uploadPhotos() {
+    const files = document.getElementById("photoInput").files;
+    if (files.length === 0) {
+        alert("Please select at least one photo.");
+        return;
+    }
+
+    const formData = new FormData();
+    for (let file of files) {
+        formData.append("files", file);
+    }
+
+    // Generate a unique QR code value (you can replace this with something else)
+    const qrCode = "QR_" + new Date().getTime();
+
+    const response = await fetch(`http://localhost:8080/photos/${qrCode}`, {
+        method: "POST",
+        body: formData
+    });
+
+    const data = await response.json();
+    alert(data.message);
+    fetchPhotos();
+}
+
+
+    async function fetchPhotos() {
+        const response = await fetch("http://localhost:8080/photos");
+        const photos = await response.json();
+
+        const container = document.getElementById("photoList");
+        container.innerHTML = "";
+
+        for (let photo of photos) {
+            const photoBox = document.createElement("div");
+            photoBox.style.border = "1px solid #ccc";
+            photoBox.style.padding = "10px";
+            photoBox.style.margin = "10px";
+
+            // Show uploaded image
+            const img = document.createElement("img");
+            img.src = `uploads/${photo.fileName}`;
+            img.alt = photo.fileName;
+            img.width = 150;
+
+            // Show QR image (download QR code)
+            const qrImg = document.createElement("img");
+            qrImg.src = `http://localhost:8080/photos/qr/${photo.id}`;
+            qrImg.alt = "QR Code";
+            qrImg.width = 150;
+            qrImg.style.marginLeft = "20px";
+
+            photoBox.appendChild(img);
+            photoBox.appendChild(qrImg);
+            container.appendChild(photoBox);
+        }
+    }
+
+    window.onload = fetchPhotos;
+</script>
+</body>
+</html>
